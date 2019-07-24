@@ -54,7 +54,7 @@ class LibraryInstance:
   def get_libraries(self, name):
     return self._lc.get_libraries(name=name)
     
-  def get_info(self):
+  def get_library_info(self):
     return {"id": self._id, "name": self._name}
 
   def get_contents(self):
@@ -85,8 +85,9 @@ class LibraryInstance:
     folder_id = self.get_or_create_folder_path_id(library_subdir)
     result = self._lc.upload_from_galaxy_filesystem(self._id, link_data_only="link_to_files")
 
-  def add_files(self, files_generator, mountpoint_prefix): #from os.walk
-    mountpoint_prefix = _prune_separators(mountpoint_prefix)
+  def add_files(self, entrypoint): #from os.walk
+    files_generator = self._filepath_enumerator(entrypoint)
+    mountpoint_prefix = _prune_separators(entrypoint)
     for root, directories, files in files_generator:
       full_paths = ""
       for name in files:
@@ -98,28 +99,8 @@ class LibraryInstance:
   def _create_subdir(name, base_folder_id):
     return self._lc.(self._id, name, base_folder_id=base_folder_id) 
 
-  def create_folder(self, path):
-    
-    # sanitize path
-    path = _prune_separators(path)
-    chunked = path.split(os.sep)
+  def _filepath_enumerator(entrypoint):
+    if os.path.isdir(full_path):
+      return os.walk(full_path) # returns tuple of (root, directories, files)
+    raise Exception("{} is not a valid path to traverse".format(entrypoint))
 
-def enumerate_files(entrypoint, subdirectory="by-filepath"):
-  if entrypoint[-1:] == '/':
-    entrypoint = entrypoint[:-1]
-  full_path = entrypoint + "/{}".format(subdirectory)
-  if os.path.isdir(full_path):
-    return os.walk(full_path) # returns tuple of (root, directories, files)
-  return ()
-
-# create library if it doesnt exist
-def get_or_create_library(name, description="Cohort data", library_client):
-
-def 
-
-def create_history(name, history_client):
-  return history_client.create_history(name)
-
-for root, directories, files in enumerate_files(args.m):
-  # for each file
-    # remove the mount point compo
