@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+
+from gen3_to_galaxy.gen3galaxysync import Gen3GalaxySync
+
+import argparse
+import sys
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-address", required=True, help="address of the local Galaxy instance")
+  parser.add_argument("-api_key", required=True, help="a Galaxy admin API key")
+  parser.add_argument("-mountpoint", required=True, help="the directory to search for files to add")
+  parser.add_argument("-debug", action='store_true', help="toggles DEBUG-level logging output")
+  
+  try:
+    args = parser.parse_args()
+  except SystemExit as err:
+    if err.code == 2:
+      print("\n")
+      parser.print_help()
+    sys.exit()  
+  gs = Gen3GalaxySync(args.address, args.api_key, "/tmp/mihc_temp", 
+    loglevel="DEBUG" if args.debug else None)
