@@ -1,5 +1,5 @@
-from gen3_to_galaxy.historyinstance import HistoryInstance
-from gen3_to_galaxy.libraryinstance import LibraryInstance
+from sync_with_galaxy.historyinstance import HistoryInstance
+from sync_with_galaxy.libraryinstance import LibraryInstance
 
 from bioblend.galaxy import GalaxyInstance
 
@@ -7,13 +7,13 @@ from datetime import datetime, timezone
 import logging
 import os
 
-class Gen3GalaxySync:
+class GalaxySync:
   """
   NOTE: Requires both galaxy and the files to be mounted to be co-local to the script
   """
   def __init__(self, galaxy_address, api_key, mountpoint, library_name=None, library_description=None, history_name=None, loglevel=logging.ERROR):
     logging.basicConfig(format='%(levelname)s:%(message)s', level=loglevel)
-    logging.debug("Initializing Gen3GalaxySync with {}".format(galaxy_address))
+    logging.debug("Initializing GalaxySync with {}".format(galaxy_address))
     mountpoint = os.path.abspath(mountpoint)
     # set default values for omitted arguments
     if not library_name:
