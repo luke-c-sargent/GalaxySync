@@ -3,6 +3,7 @@ from bioblend.galaxy.histories import HistoryClient
 from datetime import datetime, timezone
 
 import logging
+import re
 
 class HistoryInstance:
 
@@ -19,14 +20,15 @@ class HistoryInstance:
     self._tags = []
 
     # check for existing histories
-    extant_history = self._check_for_extant_history()
+    extant_history = self._check_for_extant_history(name)
     if extant_history: # populate the object if there is a history
+      logging.debug("existing history:\n\t- {}".format(extant_history))
       self._id = extant_history["id"]
       self._name = extant_history["name"]
       self._enumerate_existing_history_files()
-      self._sync_with_extant_history(extant_history, contents)
+      self._sync_with_extant_history(contents)
     else: # create the history fresh
-      history_name = self.get_timestamped_name()
+      history_name = self.get_timestamped_name(name)
       logging.debug("Creating History instance {}".format(history_name))
       hdata = self._create_history(history_name)
       self._id = hdata["id"]
@@ -47,22 +49,31 @@ class HistoryInstance:
     # sub-routine for checking history
     def in_history_contents(f_id):
       for hc in self._contents:
-        if self._contents[hc]["dataset_id"] == f_id:
+        if self._contents[hc]["id"] == f_id:
+          logging.debug("file id {} in history as {}".format(f_id, hc))
           return True
       return False
-    # takes contents from history, have a mutable contents to ... mutate
-    lib_contents_mutable = dict(library_contents)
+
+    # keep track of the things to remove
+    dupes = {}
+
     # compare the two lists
-    for lc in library_contents:
-      file_list = library_contents[lc]["files"]
+    for lc in library_contents: # represents a folder
+      file_list = library_contents[lc]["files"] # the underlying files
       for f in file_list:
         f_id = file_list[f]
         if in_history_contents(f_id):
-          del lib_contents_mutable[lc]["files"][f]
+          if lc not in dupes:
+            dupes[lc] = []
+          dupes[lc].append(f)
+          #del lib_contents_mutable[lc]["files"][f]
+    for duplicate_folder in dupes: # for each directory with duplicates....
+      for dupefile in dupes[duplicate_folder]:
+        del library_contents[duplicate_folder]["files"][dupefile]
     # return the difference
-    return lib_contents_mutable
+    return library_contents
 
-  def _check_for_extant_history(self):
+  def _check_for_extant_history(self, name):
     """
     returns `None` if no extant history, else dict:
     {
@@ -75,13 +86,18 @@ class HistoryInstance:
     # for each history entry,
     extant_histories = []
     chosen_history = None
-    found_histories = self._hc.get_histories(name=self._name, deleted=False)
+    all_found_histories = self._hc.get_histories(deleted=False)
+    found_histories = []
+    # limit to histories of note
+    for fh in all_found_histories:
+      if "tags" in fh and fh["name"].startswith(name):
+        found_histories.append(fh)
     if not found_histories:
-      logging.debug("no histories found with name {}".format(self._name))
+      logging.debug("no histories found")
       return None
     for eh in found_histories:
       # get: name, id, deleted, tags [] ...
-      if self.DEFAULT_TAG in eh["tags"] and eh["name"].startswith(self._name):
+      if self.DEFAULT_TAG in eh["tags"] and eh["name"].startswith(name):
         # candidate's key features:
         datetime_tag = None
         for _tag in eh["tags"]:
@@ -97,7 +113,7 @@ class HistoryInstance:
         extant_histories.append(simplified_eh)
     eh_len = len(extant_histories)
     if eh_len > 1: #disambiguate histories
-      logging.warn("Multiple generated histories found with prefix {}:\n-".format(self._name))
+      logging.warn("Multiple generated histories found with prefix {}:\n-".format(name))
       for eh in extant_histories:
         logging.warn("\t- {} : {}".format(eh["name"], eh["id"]))
       return self._disambiguate_multiple_extant_histories(extant_histories)
@@ -124,19 +140,20 @@ class HistoryInstance:
       raise Exception("cannot create history tag when history id is None")
 
   def _check_tag_for_timestamp(self, tag):
-    return re.match(SELF.DATETIME_REGEX, tag) != None
+    return re.match(self.DATETIME_REGEX, tag) != None
 
   def _enumerate_existing_history_files(self):
-    for i in self._hc.show_history(self._id, contents=True, deleted=False):
+    existing_history_files = self._hc.show_history(self._id, contents=True, deleted=False)
+    logging.debug("existing history files:\n\t- {}".format(existing_history_files))
+    for i in existing_history_files:
       self._contents[i["name"]] = {
-        "file_name" : i["file_name"],
-        "dataset_id" : i["dataset_id"]
+        #"file_name" : i["file_name"],
+        "id" : i["dataset_id"]
       }
+#    print(self._contents)
 
-  def get_timestamped_name(self):
-    if timestamped:
-      return "{} @ {}".format(self._name, self._timestamp)
-    return self._name
+  def get_timestamped_name(self, name):
+    return "{} @ {}".format(name, self._timestamp)
 
   def get_id(self):
     return self._id

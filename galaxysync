@@ -20,5 +20,5 @@ if __name__ == "__main__":
       print("\n")
       parser.print_help()
     sys.exit()  
-  gs = GalaxySync(args.address, args.api_key, "/tmp/mihc_temp", 
+  gs = GalaxySync(args.address, args.api_key, args.path, 
     loglevel="DEBUG" if args.debug else None)

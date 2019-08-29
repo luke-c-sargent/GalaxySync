@@ -19,7 +19,8 @@ class GalaxySync:
       library_name = mountpoint[mountpoint.rfind(os.sep)+1:] or "root"
     if not library_description:
       library_description = "Library created from specified local mount point"
+    if not history_name:
+      history_name = library_name
     self._gi = GalaxyInstance(galaxy_address, api_key)
     self._li = LibraryInstance(self._gi, library_name, library_description, mountpoint)
     self._hi = HistoryInstance(self._gi, history_name, self._li.get_contents())
-    self._hi.add_library_contents()

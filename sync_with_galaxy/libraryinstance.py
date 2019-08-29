@@ -98,7 +98,7 @@ class LibraryInstance:
     # https://github.com/galaxyproject/bioblend/pull/273
     result = self._lc.get_libraries(name=name, deleted=False)
     return list([x for x in result if not x["deleted"]])
-    
+
   def get_library_info(self):
     return {"id": self._id, "name": self._name}
 
