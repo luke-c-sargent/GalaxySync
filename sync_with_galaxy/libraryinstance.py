@@ -103,7 +103,7 @@ class LibraryInstance:
     return {"id": self._id, "name": self._name}
 
   def get_contents(self):
-    return self._contents
+    return dict(self._contents)
 
   def get_or_create_folder_path_id(self, path):
     if path == "/":
